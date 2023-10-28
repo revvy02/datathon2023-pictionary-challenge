@@ -1,7 +1,7 @@
 # datathon2023-pictionary-challenge
 
 # Contents
-- [Pictionary Plunge About](@Pictionary-Plunge-About)
+- [Pictionary Plunge About](#Pictionary-Plunge-About)
 - [Install Google Cloud SDK](#Install-Google-Cloud-SDK)
 - [Install Data](#Install-Data)
 - [View Data](#View-Data)
