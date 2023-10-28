@@ -1,4 +1,12 @@
+import torch
 import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, random_split
+import numpy as np
+import pandas as pd
+import os
+import Processor
+import ast
 
 class ConvLSTMModel(nn.Module):
     def __init__(self, input_channels, hidden_size, num_classes):
@@ -49,14 +57,88 @@ class ConvLSTMModel(nn.Module):
         return x
 
 
+def get_mappings(): 
+    current_directory = os.getcwd()
+    data_file = current_directory + "/data.csv"
+
+    data = pd.read_csv(data_file)
+    
+    processor = Processor.Processor()
+    
+    # Iterate over the rows using iterrows()
+    for index, row in data.iterrows():
+        # print(row)
+        
+        # Access the "Image" column from the current row
+        image = row["Image"]
+        image = ast.literal_eval(image)
+
+        # Process the image using the Processor instance
+        process_result = processor.strokes_to_image(image)
+
+        # Do something with the process_result if needed
+        label = row["Label"]
+
+        data.iloc[index] = {"Image": process_result, "Label": label}
+        print(data.iloc[index])
+
+    # Define the size of the training and test sets
+    train_size = int(0.8 * len(data))
+    test_size = len(data) - train_size
+
+    # Use random_split to create training and test datasets
+    train_dataset, test_dataset = random_split(data, [train_size, test_size])
+   
+    train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+
+    return train_dataloader, test_dataloader
+
 
 def train():
-    pass 
+    train_dataloader, test_dataloader = get_mappings()
+    model = ConvLSTMModel(1, 64, 345)
+
+    # Define the loss function and optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    num_epochs = 10  # Adjust as needed
+
+    for epoch in range(num_epochs):
+        model.train()  # Set the model to training mode
+
+        for images, labels in train_dataloader:
+            # Assuming images is a batch of image tensors and labels is a batch of corresponding labels
+
+            # Zero the gradients
+            optimizer.zero_grad()
+
+            # Forward pass
+            outputs = model(images)
+
+            # Calculate the loss
+            loss = criterion(outputs, labels)
+
+            # Backward pass
+            loss.backward()
+
+            # Update the weights
+            optimizer.step()
+
+        # Print the loss for each epoch
+        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
+
+    # Optionally, save the trained model
+    torch.save(model.state_dict(), 'conv_lstm_model.pth')
+
+
 
 
 def predict():
     pass
 
+"""
 # Create an instance of the model
 input_channels = 1  # Adjust based on your input data
 hidden_size = 64
@@ -65,3 +147,7 @@ model = ConvLSTMModel(input_channels, hidden_size, num_classes)
 
 # Print the model architecture
 print(model)
+"""
+
+# train_data, test_data = get_mappings()
+# print(train_data)
