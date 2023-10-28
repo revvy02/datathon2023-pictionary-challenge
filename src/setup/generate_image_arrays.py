@@ -1,4 +1,5 @@
 import strokes_to_png
 
-def generate_images()
+def generate_images():
+	
 	
