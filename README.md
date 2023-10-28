@@ -2,6 +2,7 @@
 
 # Contents
 - [Install Google Cloud SDK](#Install-Google-Cloud-SDK)
+- [Install Data](#Install-Data)
 
 ## Install GCloud SDK
 https://cloud.google.com/sdk/docs/install
