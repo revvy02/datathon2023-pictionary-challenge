@@ -17,3 +17,8 @@ gsutil -m cp 'gs://quickdraw_dataset/full/simplified/*.ndjson' .
 
 ## View Data
 https://quickdraw.withgoogle.com/data
+
+## Project Structure
+
+### 1. Convert Stroke Maps to Image Map
+Input drawings will initally be in the form of multidimensional arrays for each stroke, which is defined as a continous line where the pen does not lift from the drawing board. The values will include an x array and a y array.
