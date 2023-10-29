@@ -1,4 +1,8 @@
-# datathon2023-pictionary-challenge
+
+
+<div align="center">
+    <h1># datathon2023-pictionary-challenge</h1>
+</div>
 
 # Contents
 - [Pictionary Plunge About](#Pictionary-Plunge-About)
