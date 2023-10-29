@@ -54,7 +54,7 @@ def ramer_douglas_peucker(stroke, epsilon):
 
 def process_drawing(raw_drawing):
     # Extract the strokes from the raw drawing data
-    strokes = raw_drawing["drawing"]
+    strokes = raw_drawing["strokes"]
 
     # Apply the preprocessing steps
     strokes = align_to_top_left(strokes)
@@ -71,13 +71,8 @@ def process_drawing(raw_drawing):
 
     return raw_drawing
 
-def main():
-    # Input and output filenames
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = os.path.join(script_dir, "full_raw_aircraft_carrier.ndjson")
-    output_file = os.path.join(script_dir, "simplified_aircraft_carrier.ndjson")
-
-    # Open the input file and create the output file
+def process_file(input_file, output_file):
+    """Process a single file and save the output to another file."""
     with open(input_file, "r") as infile, open(output_file, "w") as outfile:
         for line in infile:
             # Load the raw drawing data
@@ -88,6 +83,32 @@ def main():
 
             # Write the processed drawing to the output file
             outfile.write(json.dumps(processed_drawing) + "\n")
+
+def main():
+    # Input and output filenames
+    # script_dir = os.path.dirname(os.path.realpath(__file__))
+
+    # Input and output folder paths
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    input_folder = os.path.join(script_dir, "Archive")
+    output_folder = os.path.join(script_dir, "simplified_files")  # Assuming you want to save processed files in 'simplified_files' folder
+
+    # Make sure output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Make sure output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Iterate through each file in the input folder
+    for filename in os.listdir(input_folder):
+        if filename.endswith(".ndjson"):  # Check file extension
+            input_file = os.path.join(input_folder, filename)
+            output_file = os.path.join(output_folder, "simplified_" + filename)
+            process_file(input_file, output_file)
+
+    
 
 if __name__ == "__main__":
     main()
