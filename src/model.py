@@ -164,32 +164,58 @@ def train(train_dataloader):
     # Optionally, save the trained model
     torch.save(model.state_dict(), 'conv_lstm_model.pth')
 
+    return model
+
 
 def predict(model, data):
     
     model.eval()
 
-    predictions = []
+    correct = 0
+    total = 0
 
     with torch.no_grad():
         for inputs in data:
             # Assuming inputs[0] is the batch of image tensors
             images = inputs[0]
+            labels = inputs[1]
 
             # Get the model's predictions
             outputs = model(images)
 
             # Get the predicted class for each item in the batch
-            _, predicted = outputs.max(1)
+            _, predicted = torch.max(outputs, 1)
 
-            # Append batch predictions to the list
-            predictions.extend(predicted.tolist())
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-    return predictions
+    accuracy = correct / total 
+
+    return accuracy
 
 
+def load_model():
+
+    # Load the model from the .pth file
+    model = ConvLSTMModel(1, 64, 10)  # Create an instance of your model
+    model_path = 'conv_lstm_model.pth'  # Replace with the path to your .pth file
+
+    # Load the state dictionary
+    state_dict = torch.load(model_path)
+
+    # Load the state dictionary into the model
+    model.load_state_dict(state_dict)
+
+    return model
 
 
-
+retrain = False
 train_dataloader, test_dataloader = get_mappings()
-train(train_dataloader)
+
+if retrain:
+    model = train(train_dataloader)
+else:
+    model = load_model()
+
+accuracy = predict(model, test_dataloader)
+print(f'Test Accuracy: {accuracy * 100:.2f}%')
