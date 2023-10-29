@@ -50,3 +50,7 @@ Adjust hyperparameters to obtain highest accuracy. This step applies dropout and
 Save the weights of the trained model and adjust the learning rate so the weights will not be destroyed. Apply transfer learning to the new model.
 
 ### 8. If test data isin't normalized, create functions to fix the data
+
+## Details
+
+### 1. The model is trained using an 80:20 train test split
