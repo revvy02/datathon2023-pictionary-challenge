@@ -14,55 +14,64 @@ class ConvLSTMModel(nn.Module):
         super(ConvLSTMModel, self).__init__()
 
         # Convolutional Layers
-        self.conv1 = nn.Conv2d(input_channels, 64, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
         self.relu3 = nn.ReLU()
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv4 = nn.Conv2d(256, 1, kernel_size=3, stride=1, padding=1)
-
 
         # LSTM Layers
-        self.lstm1 = nn.LSTM(input_size=32, hidden_size=hidden_size, num_layers=1, batch_first=True)
-        self.lstm2 = nn.LSTM(input_size=hidden_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
+        #self.lstm1 = nn.LSTM(input_size=32, hidden_size=hidden_size, num_layers=1, batch_first=True)
+        #self.lstm2 = nn.LSTM(input_size=hidden_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
 
         # Fully Connected Layer with Softmax Activation
-        self.fc = nn.Linear(hidden_size, num_classes)
+        self.fc = nn.Linear(65536, 1024)
+        self.relu4 = nn.ReLU()
+        self.dropout1 = nn.Dropout(0.3)
+
+        self.fc2 = nn.Linear(1024, num_classes)
         self.softmax = nn.Softmax(dim=1)  # Apply softmax along the class dimension
 
 
     def forward(self, x):
         # Convolutional Layers
+
+        x = x.unsqueeze(1)
+
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
         x = self.pool3(self.relu3(self.conv3(x)))
-        x = self.conv4(x)
-
 
         # Reshape for LSTM
-        batch_size, features, time_steps = x.size()
-        x = x.view(batch_size, time_steps, features)  # Reshape to (batch_size, time_steps, features)
+        #batch_size, _, features, time_steps = x.size()
+        #x = x.view(batch_size, time_steps, features)  # Reshape to (batch_size, time_steps, features)
 
         # LSTM Layers
-        x, _ = self.lstm1(x)
-        x, _ = self.lstm2(x)
+        #x, _ = self.lstm1(x)
+        #x, _ = self.lstm2(x)
 
 
         # Select the output at the last time step
-        x = x[:, -1, :]
+        # x = x[:, -1, :]
+        # print(x.size())
+        x = x.view(x.size(0), -1)
 
 
         # Fully Connected Layer
         x = self.fc(x)
+        x = self.relu4(x)
+        x = self.dropout1(x)
+        x = self.fc2(x)
 
         return x
+
 
 class DatasetWrapper(Dataset):
     def __init__(self, base_dataset):
@@ -120,15 +129,16 @@ def get_mappings():
     # Use random_split to create training and test datasets
     train_dataset, test_dataset = random_split(data, [train_size, test_size])
    
-    train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=256, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=256, shuffle=True)
 
     return train_dataloader, test_dataloader
 
 
 def train(train_dataloader):
-    num_classes = 10
-    model = ConvLSTMModel(1, 64, num_classes)
+    num_classes = 50
+    hidden_size = 64
+    model = ConvLSTMModel(1, hidden_size, num_classes)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
@@ -189,8 +199,14 @@ def predict(model, data):
             # Get the predicted class for each item in the batch
             _, predicted = torch.max(outputs, 1)
 
+            print(predicted)
+            print(labels.size(0))
+            print(labels)
+
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+
+            print(correct)
 
     accuracy = correct / total 
 
@@ -200,7 +216,7 @@ def predict(model, data):
 def load_model():
 
     # Load the model from the .pth file
-    model = ConvLSTMModel(1, 64, 10)  # Create an instance of your model
+    model = ConvLSTMModel(1, 64, 20)  # Create an instance of your model
     model_path = 'conv_lstm_model.pth'  # Replace with the path to your .pth file
 
     # Load the state dictionary
@@ -212,7 +228,7 @@ def load_model():
     return model
 
 
-retrain = False
+retrain = True
 train_dataloader, test_dataloader = get_mappings()
 
 if retrain:
