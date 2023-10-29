@@ -1,4 +1,4 @@
-/# datathon2023-pictionary-challenge
+# datathon2023-pictionary-challenge
 
 # Contents
 - [Pictionary Plunge About](#Pictionary-Plunge-About)
