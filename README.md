@@ -1,7 +1,7 @@
 
 
 <div align="center">
-    <h1># datathon2023-pictionary-challenge</h1>
+    <h1><b>datathon2023-pictionary-challenge</b></h1>
 </div>
 
 # Contents
