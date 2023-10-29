@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split, Dataset
+from torch.utils.data import DataLoader, random_split, Dataset, TensorDataset
 import numpy as np
 import pandas as pd
 import os
@@ -56,19 +56,21 @@ class ConvLSTMModel(nn.Module):
 
         return x
 
-class CustomDataset(Dataset):
-    def __init__(self, dataframe):
-        self.image = torch.tensor(dataframe['Image'].values, dtype=torch.int64)
-        # If you have labels, you can include them as well
-        self.labels = torch.tensor(dataframe['Labels'].values, dtype=torch.int64)
+class DatasetWrapper(Dataset):
+    def __init__(self, base_dataset):
+        self.base_dataset = base_dataset
 
     def __len__(self):
-        return len(self.image)
+        return len(self.base_dataset)
 
-    def __getitem__(self, idx):
-        # If you have labels, return them as well
-        return self.image[idx], self.labels[idx]
-        # return self.data[idx]
+    def __getitem__(self, index):
+        row = self.base_dataset.iloc[index]
+        
+        image = torch.tensor(row["Image"], dtype=torch.float32)
+        label = row["Label"]
+
+        return image, label
+
 
 def get_mappings(): 
     current_directory = os.getcwd()
@@ -79,7 +81,6 @@ def get_mappings():
     processor = Processor.Processor()
     
     # Iterate over the rows using iterrows()
-    count = 0
     for index, row in data.iterrows():
         # print(row)
         
@@ -95,17 +96,12 @@ def get_mappings():
         label = row["Label"]
 
         data.iloc[index] = {"Image": process_result, "Label": label}
-
-        count += 1
-        if count == 1:
-            break
-
-    # Create a PyTorch dataset from your pandas DataFrame
-    data = CustomDataset(data)
-
+    
     # Define the size of the training and test sets
     train_size = int(0.8 * len(data))
     test_size = len(data) - train_size
+
+    data = DatasetWrapper(data)
 
     # Use random_split to create training and test datasets
     train_dataset, test_dataset = random_split(data, [train_size, test_size])
@@ -117,7 +113,7 @@ def get_mappings():
 
 
 def train(train_dataloader):
-    model = ConvLSTMModel(1, 64, 345)
+    model = ConvLSTMModel(64, 64, 345)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
@@ -125,19 +121,15 @@ def train(train_dataloader):
 
     num_epochs = 10  # Adjust as needed
 
-    for i in train_dataloader:
-        print(2)
-
     for epoch in range(num_epochs):
 
         for inputs in train_dataloader:
             # Assuming images is a batch of image tensors and labels is a batch of corresponding labels
-            print(inputs)
-            break
-            labels = inputs[1] - 1
-            inputs = inputs[0][:, :-1]  # Exclude the target column from the input
+            labels = inputs[1] 
+            images = inputs[0]
+            #print(labels)
+            #print(images)
             
-            break
             # Zero the gradients
             optimizer.zero_grad()
 
