@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import Processor
 import ast
+from sklearn.preprocessing import LabelEncoder
 
 class ConvLSTMModel(nn.Module):
     def __init__(self, input_channels, hidden_size, num_classes):
@@ -26,7 +27,7 @@ class ConvLSTMModel(nn.Module):
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # LSTM Layers
-        self.lstm1 = nn.LSTM(input_size=256, hidden_size=hidden_size, num_layers=1, batch_first=True)
+        self.lstm1 = nn.LSTM(input_size=32, hidden_size=hidden_size, num_layers=1, batch_first=True)
         self.lstm2 = nn.LSTM(input_size=hidden_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
 
         # Fully Connected Layer with Softmax Activation
@@ -41,8 +42,8 @@ class ConvLSTMModel(nn.Module):
         x = self.pool3(self.relu3(self.conv3(x)))
 
         # Reshape for LSTM
-        batch_size, channels, height, width = x.size()
-        x = x.view(batch_size, height, width * channels)
+        batch_size, features, time_steps = x.size()
+        x = x.view(batch_size, time_steps, features)  # Reshape to (batch_size, time_steps, features)
 
         # LSTM Layers
         x, _ = self.lstm1(x)
@@ -106,14 +107,14 @@ def get_mappings():
     # Use random_split to create training and test datasets
     train_dataset, test_dataset = random_split(data, [train_size, test_size])
    
-    train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
     return train_dataloader, test_dataloader
 
 
 def train(train_dataloader):
-    model = ConvLSTMModel(64, 64, 345)
+    model = ConvLSTMModel(1, 64, 345)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
