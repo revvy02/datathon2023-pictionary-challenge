@@ -153,10 +153,29 @@ def train(train_dataloader):
     torch.save(model.state_dict(), 'conv_lstm_model.pth')
 
 
+def predict(model, data):
+    
+    model.eval()
+
+    predictions = []
+
+    with torch.no_grad():
+        for inputs in data:
+            # Assuming inputs[0] is the batch of image tensors
+            images = inputs[0]
+
+            # Get the model's predictions
+            outputs = model(images)
+
+            # Get the predicted class for each item in the batch
+            _, predicted = outputs.max(1)
+
+            # Append batch predictions to the list
+            predictions.extend(predicted.tolist())
+
+    return predictions
 
 
-def predict():
-    pass
 
 """
 # Create an instance of the model
