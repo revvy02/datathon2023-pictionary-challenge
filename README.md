@@ -10,6 +10,9 @@
 ## Pictionary Plunge About
 The Pictionary Plunge is based off the Quick! Draw Challenge released by Google in 2016. A machine learning model will make classification of what the doodle is as the user makes the drawing.
 
+![Quick! Draw](./quick!draw.png)
+
+
 ## Install GCloud SDK
 https://cloud.google.com/sdk/docs/install
 
