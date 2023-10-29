@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Dataset
 import numpy as np
 import pandas as pd
 import os
@@ -56,6 +56,19 @@ class ConvLSTMModel(nn.Module):
 
         return x
 
+class CustomDataset(Dataset):
+    def __init__(self, dataframe):
+        self.image = torch.tensor(dataframe['Image'].values, dtype=torch.int64)
+        # If you have labels, you can include them as well
+        self.labels = torch.tensor(dataframe['Labels'].values, dtype=torch.int64)
+
+    def __len__(self):
+        return len(self.image)
+
+    def __getitem__(self, idx):
+        # If you have labels, return them as well
+        return self.image[idx], self.labels[idx]
+        # return self.data[idx]
 
 def get_mappings(): 
     current_directory = os.getcwd()
@@ -66,6 +79,7 @@ def get_mappings():
     processor = Processor.Processor()
     
     # Iterate over the rows using iterrows()
+    count = 0
     for index, row in data.iterrows():
         # print(row)
         
@@ -75,12 +89,19 @@ def get_mappings():
 
         # Process the image using the Processor instance
         process_result = processor.strokes_to_image(image)
+        process_result = processor.image_to_array(process_result)
 
         # Do something with the process_result if needed
         label = row["Label"]
 
         data.iloc[index] = {"Image": process_result, "Label": label}
-        print(data.iloc[index])
+
+        count += 1
+        if count == 1:
+            break
+
+    # Create a PyTorch dataset from your pandas DataFrame
+    data = CustomDataset(data)
 
     # Define the size of the training and test sets
     train_size = int(0.8 * len(data))
@@ -95,8 +116,7 @@ def get_mappings():
     return train_dataloader, test_dataloader
 
 
-def train():
-    train_dataloader, test_dataloader = get_mappings()
+def train(train_dataloader):
     model = ConvLSTMModel(1, 64, 345)
 
     # Define the loss function and optimizer
@@ -105,12 +125,19 @@ def train():
 
     num_epochs = 10  # Adjust as needed
 
+    for i in train_dataloader:
+        print(2)
+
     for epoch in range(num_epochs):
-        model.train()  # Set the model to training mode
 
-        for images, labels in train_dataloader:
+        for inputs in train_dataloader:
             # Assuming images is a batch of image tensors and labels is a batch of corresponding labels
-
+            print(inputs)
+            break
+            labels = inputs[1] - 1
+            inputs = inputs[0][:, :-1]  # Exclude the target column from the input
+            
+            break
             # Zero the gradients
             optimizer.zero_grad()
 
@@ -149,5 +176,5 @@ model = ConvLSTMModel(input_channels, hidden_size, num_classes)
 print(model)
 """
 
-# train_data, test_data = get_mappings()
-# print(train_data)
+train_dataloader, test_dataloader = get_mappings()
+train(train_dataloader)

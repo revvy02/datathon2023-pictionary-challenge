@@ -10,7 +10,7 @@ def strokes_to_image(strokes, image_size, line_width):
 		x, y = stroke[0], stroke[1]
 		for i in range(1, len(x)):
 			draw.line([(x[i-1], y[i-1]), (x[i], y[i])], fill=0, width=line_width)
-			
+		
 	return image
 
 def image_to_array(img, image_size):
@@ -22,9 +22,9 @@ def image_to_array(img, image_size):
 	img_array[img_array == 255] = 1
 	img_array[img_array == 0] = 0
 
-	img_vector = img_array.flatten()
+	# img_vector = img_array.flatten()
 	
-	return img_vector
+	return img_array
 
 def array_to_image(arr, image_size):
 	arr = arr.reshape(image_size, image_size)
