@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split, Dataset, TensorDataset
+from torch.utils.data import DataLoader, random_split, Dataset
 import numpy as np
 import pandas as pd
 import os
@@ -26,6 +26,9 @@ class ConvLSTMModel(nn.Module):
         self.relu3 = nn.ReLU()
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
+        self.conv4 = nn.Conv2d(256, 1, kernel_size=3, stride=1, padding=1)
+
+
         # LSTM Layers
         self.lstm1 = nn.LSTM(input_size=32, hidden_size=hidden_size, num_layers=1, batch_first=True)
         self.lstm2 = nn.LSTM(input_size=hidden_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
@@ -40,6 +43,8 @@ class ConvLSTMModel(nn.Module):
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
         x = self.pool3(self.relu3(self.conv3(x)))
+        x = self.conv4(x)
+
 
         # Reshape for LSTM
         batch_size, features, time_steps = x.size()
@@ -49,8 +54,10 @@ class ConvLSTMModel(nn.Module):
         x, _ = self.lstm1(x)
         x, _ = self.lstm2(x)
 
+
         # Select the output at the last time step
         x = x[:, -1, :]
+
 
         # Fully Connected Layer
         x = self.fc(x)
@@ -75,10 +82,14 @@ class DatasetWrapper(Dataset):
 
 def get_mappings(): 
     current_directory = os.getcwd()
-    data_file = current_directory + "/data.csv"
+    data_file = current_directory + "/data2.csv"
 
     data = pd.read_csv(data_file)
-    
+
+    label_encoder = LabelEncoder()
+    encoded_outputs = label_encoder.fit_transform(data["Label"])
+    data["Label"] = encoded_outputs
+
     processor = Processor.Processor()
     
     # Iterate over the rows using iterrows()
@@ -114,7 +125,8 @@ def get_mappings():
 
 
 def train(train_dataloader):
-    model = ConvLSTMModel(1, 64, 345)
+    num_classes = 10
+    model = ConvLSTMModel(1, 64, num_classes)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
@@ -126,7 +138,7 @@ def train(train_dataloader):
 
         for inputs in train_dataloader:
             # Assuming images is a batch of image tensors and labels is a batch of corresponding labels
-            labels = inputs[1] 
+            labels = inputs[1].long()
             images = inputs[0]
             #print(labels)
             #print(images)
@@ -158,16 +170,7 @@ def train(train_dataloader):
 def predict():
     pass
 
-"""
-# Create an instance of the model
-input_channels = 1  # Adjust based on your input data
-hidden_size = 64
-num_classes = 345  # Adjust based on your task
-model = ConvLSTMModel(input_channels, hidden_size, num_classes)
 
-# Print the model architecture
-print(model)
-"""
 
 train_dataloader, test_dataloader = get_mappings()
 train(train_dataloader)
