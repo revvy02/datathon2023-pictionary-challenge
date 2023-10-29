@@ -23,6 +23,11 @@ https://cloud.google.com/sdk/docs/install
 ## Install Data
 gsutil -m cp 'gs://quickdraw_dataset/full/simplified/*.ndjson' .
 
+NOTE: Run this command on the google cloud terminal
+
+# Pip installs
+pip install scikit-learn
+
 ## View Data
 https://quickdraw.withgoogle.com/data
 
