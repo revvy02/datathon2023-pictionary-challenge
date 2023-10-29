@@ -1,67 +1,89 @@
+import torch
 import torch.nn as nn
 
 class ConvLSTMModel(nn.Module):
-    def __init__(self, input_channels, hidden_size, num_classes):
-        super(ConvLSTMModel, self).__init__()
+	def __init__(self, input_channels, hidden_size, num_classes):
+		super(ConvLSTMModel, self).__init__()
 
-        # Convolutional Layers
-        self.conv1 = nn.Conv2d(input_channels, 64, kernel_size=3, stride=1, padding=1)
-        self.relu1 = nn.ReLU()
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+		# Convolutional Layers
+		self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
+		self.relu1 = nn.ReLU()
+		self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.relu2 = nn.ReLU()
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+		self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+		self.relu2 = nn.ReLU()
+		self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
-        self.relu3 = nn.ReLU()
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+		self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+		self.relu3 = nn.ReLU()
+		self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        # LSTM Layers
-        self.lstm1 = nn.LSTM(input_size=256, hidden_size=hidden_size, num_layers=1, batch_first=True)
-        self.lstm2 = nn.LSTM(input_size=hidden_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
+		# Fully Connected Layer with Softmax Activation
+		self.fc = nn.Linear(65536, 1024)
+		self.relu4 = nn.ReLU()
+		self.dropout1 = nn.Dropout(0.3)
 
-        # Fully Connected Layer with Softmax Activation
-        self.fc = nn.Linear(hidden_size, num_classes)
-        self.softmax = nn.Softmax(dim=1)  # Apply softmax along the class dimension
+		self.fc2 = nn.Linear(1024, num_classes)
+		self.softmax = nn.Softmax(dim=1)  # Apply softmax along the class dimension
 
+	def forward(self, x):
+		# Convolutional Layers
+		x = x.unsqueeze(1)
 
-    def forward(self, x):
-        # Convolutional Layers
-        x = self.pool1(self.relu1(self.conv1(x)))
-        x = self.pool2(self.relu2(self.conv2(x)))
-        x = self.pool3(self.relu3(self.conv3(x)))
+		x = self.pool1(self.relu1(self.conv1(x)))
+		x = self.pool2(self.relu2(self.conv2(x)))
+		x = self.pool3(self.relu3(self.conv3(x)))
 
-        # Reshape for LSTM
-        batch_size, channels, height, width = x.size()
-        x = x.view(batch_size, height, width * channels)
+		# Reshape for LSTM
+		#batch_size, _, features, time_steps = x.size()
+		#x = x.view(batch_size, time_steps, features)  # Reshape to (batch_size, time_steps, features)
 
-        # LSTM Layers
-        x, _ = self.lstm1(x)
-        x, _ = self.lstm2(x)
+		# LSTM Layers
+		#x, _ = self.lstm1(x)
+		#x, _ = self.lstm2(x)
 
-        # Select the output at the last time step
-        x = x[:, -1, :]
+		# Select the output at the last time step
+		# x = x[:, -1, :]
+		# print(x.size())
+		x = x.view(x.size(0), -1)
 
-        # Fully Connected Layer
-        x = self.fc(x)
+		# Fully Connected Layer
+		x = self.fc(x)
+		x = self.relu4(x)
+		x = self.dropout1(x)
+		x = self.fc2(x)
 
-        return x
+		return x
 
+	def predict(model, data):
+    
+		model.eval()
 
+		correct = 0
+		total = 0
 
-def train():
-    pass 
+		with torch.no_grad():
+			for inputs in data:
+				# Assuming inputs[0] is the batch of image tensors
+				images = inputs[0]
+				labels = inputs[1]
+				strokes = inputs[2]
 
+				# Get the model's predictions
+				outputs = model(images)
 
-def predict():
-    pass
+				# Get the predicted class for each item in the batch
+				_, predicted = torch.max(outputs, 1)
 
-# Create an instance of the model
-input_channels = 1  # Adjust based on your input data
-hidden_size = 64
-num_classes = 345  # Adjust based on your task
-model = ConvLSTMModel(input_channels, hidden_size, num_classes)
+				print(predicted)
+				print(labels.size(0))
+				print(labels)
 
-# Print the model architecture
-print(model)
+				total += labels.size(0)
+				correct += (predicted == labels).sum().item()
+
+				print(correct)
+
+		accuracy = correct / total 
+
+		return accuracy
