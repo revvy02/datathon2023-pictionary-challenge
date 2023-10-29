@@ -35,11 +35,11 @@ class ConvLSTMModel(nn.Module):
         #self.lstm2 = nn.LSTM(input_size=hidden_size, hidden_size=hidden_size, num_layers=1, batch_first=True)
 
         # Fully Connected Layer with Softmax Activation
-        self.fc = nn.Linear(65536, 1024)
+        self.fc = nn.Linear(65536, 512)
         self.relu4 = nn.ReLU()
         self.dropout1 = nn.Dropout(0.3)
 
-        self.fc2 = nn.Linear(1024, num_classes)
+        self.fc2 = nn.Linear(512, num_classes)
         self.softmax = nn.Softmax(dim=1)  # Apply softmax along the class dimension
 
 
@@ -145,9 +145,11 @@ def train(train_dataloader):
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
 
     num_epochs = 10  # Adjust as needed
+    total = 0
+    correct = 0
 
     for epoch in range(num_epochs):
 
@@ -164,6 +166,10 @@ def train(train_dataloader):
             # Forward pass
             outputs = model(images)
 
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
             # Calculate the loss
             loss = criterion(outputs, labels)
 
@@ -175,6 +181,8 @@ def train(train_dataloader):
 
         # Print the loss for each epoch
         print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
+        accuracy = correct / total 
+        print(accuracy)
 
     # Optionally, save the trained model
     torch.save(model.state_dict(), 'conv_lstm_model.pth')
@@ -202,14 +210,14 @@ def predict(model, data):
             # Get the predicted class for each item in the batch
             _, predicted = torch.max(outputs, 1)
 
-            print(predicted)
-            print(labels.size(0))
-            print(labels)
+            #print(predicted)
+            #print(labels.size(0))
+            #print(labels)
 
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-            print(correct)
+            # print(correct)
 
     accuracy = correct / total 
 
@@ -219,7 +227,7 @@ def predict(model, data):
 def load_model():
 
     # Load the model from the .pth file
-    model = ConvLSTMModel(1, 64, 20)  # Create an instance of your model
+    model = ConvLSTMModel(1, 64, 50)  # Create an instance of your model
     model_path = 'conv_lstm_model.pth'  # Replace with the path to your .pth file
 
     # Load the state dictionary
