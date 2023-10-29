@@ -76,8 +76,9 @@ class DatasetWrapper(Dataset):
         
         image = torch.tensor(row["Image"], dtype=torch.float32)
         label = row["Label"]
+        strokes = row["Strokes"]
 
-        return image, label
+        return image, label, strokes
 
 
 def get_mappings(): 
@@ -89,6 +90,7 @@ def get_mappings():
     label_encoder = LabelEncoder()
     encoded_outputs = label_encoder.fit_transform(data["Label"])
     data["Label"] = encoded_outputs
+    data['Strokes'] = None
 
     processor = Processor.Processor()
     
@@ -107,7 +109,7 @@ def get_mappings():
         # Do something with the process_result if needed
         label = row["Label"]
 
-        data.iloc[index] = {"Image": process_result, "Label": label}
+        data.iloc[index] = {"Image": process_result, "Label": label, 'Strokes': row['Image']}
     
     # Define the size of the training and test sets
     train_size = int(0.8 * len(data))
@@ -179,6 +181,7 @@ def predict(model, data):
             # Assuming inputs[0] is the batch of image tensors
             images = inputs[0]
             labels = inputs[1]
+            strokes = inputs[2]
 
             # Get the model's predictions
             outputs = model(images)

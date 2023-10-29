@@ -13,6 +13,22 @@ def strokes_to_image(strokes, image_size, line_width):
 		
 	return image
 
+
+def strokes_to_image_steps(strokes, image_size, line_width, index):
+	image = Image.new('L', (image_size, image_size), 255)
+	draw = ImageDraw.Draw(image)
+
+	count = 0
+	for stroke in strokes:
+		if count == index:
+			break
+		x, y = stroke[0], stroke[1]
+		for i in range(1, len(x)):
+			draw.line([(x[i-1], y[i-1]), (x[i], y[i])], fill=0, width=line_width)
+		count += 1
+	return image
+
+
 def image_to_array(img, image_size):
 	img = img.resize((image_size, image_size))
 	img = img.convert("L")
@@ -25,6 +41,7 @@ def image_to_array(img, image_size):
 	# img_vector = img_array.flatten()
 	
 	return img_array
+
 
 def array_to_image(arr, image_size):
 	arr = arr.reshape(image_size, image_size)
